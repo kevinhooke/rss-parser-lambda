@@ -1,4 +1,4 @@
-package com.serverless;
+package kh.rssparser.lambda;
 
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +9,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.serverless.ApiGatewayResponse;
+import com.serverless.Response;
 
 import kh.rssparser.RssParser;
 import kh.rssparser.model.Item;
@@ -23,10 +25,10 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		LOG.info("received: {}", input);
 		
 		RssParser parser = new RssParser();
-		Response responseBody = new Response("Go Serverless v1.x! Your function executed successfully!", input);
+		Response responseBody = new Response();
 
 		try {
-			Rss rss = parser.parseRss("http://www.southgatearc.org/sarc.rss");
+			Rss rss = parser.parseRss("TODO: pass as param");
 			
 			List<Item> items = rss.getChannel().getItem();
 			for(Item itemText : items) {
