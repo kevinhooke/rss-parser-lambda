@@ -1,6 +1,5 @@
 package kh.rssparser.lambda;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -47,7 +46,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 					
 						List<Item> items = rss.getChannel().getItem();
 						for(Item itemText : items) {
-							responseBody.getHeadlines().add(itemText.getTitle());
+							responseBody.getHeadlines().add(this.removeNonStandardChars(itemText.getTitle()));;
 						}
 						
 						response = ApiGatewayResponse.builder()
@@ -67,7 +66,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 							List<String> titles = parser.extractStringsFromDescription(description);
 							for(String title : titles) {
 								System.out.println("... title: " + title);
-								responseBody.getHeadlines().add(title);
+								responseBody.getHeadlines().add((this.removeNonStandardChars(title)));
 							}
 						}
 						
@@ -103,4 +102,11 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		
 		return response;
 	}
-}
+	
+	String removeNonStandardChars(String text) {
+		String result = text.replaceAll("“", "");
+		result = result.replaceAll("”", "");
+
+		return result;
+		}
+	}
