@@ -142,6 +142,9 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		
 		if( minsSinceLastRun > ttl || firstLambdaExecution) {
 			LOG.info("Cache expired, retrieving from source");
+			
+			//TODO: if > 5 mins, need to reset firstTime, otherwise keeps increasing 
+			
 			responseBody.setRetrievedFromSource(true);
 			result = parser.parseRss(rssUrl);
 			this.addToCache(rssUrl, result);
