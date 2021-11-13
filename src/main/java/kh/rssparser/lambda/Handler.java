@@ -53,6 +53,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 				try {
 					
 					Rss rss = this.retrieveContentFromCache(parser, rssUrl, responseBody);
+					//TODO: firstRun is null after 5 mins reset
 					responseBody.setFirstRun(firstRun.toString());
 					responseBody.setLastRun(lastRun.toString());
 					
@@ -117,6 +118,19 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		return response;
 	}
 
+	/**
+	 * If cache is still valid (time since first retrieved and cached < TTL) then return from cache,
+	 * otherwise re-retrieve from source and store to cache.
+	 * 
+	 * @param parser
+	 * @param rssUrl
+	 * @param responseBody
+	 * @return
+	 * @throws URISyntaxException
+	 * @throws JsonParseException
+	 * @throws JsonMappingException
+	 * @throws IOException
+	 */
 	Rss retrieveContentFromCache(RssParser parser, String rssUrl, Response responseBody)
 			throws URISyntaxException, JsonParseException, JsonMappingException, IOException {
 		Rss result = null;
@@ -137,14 +151,19 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		LOG.info("TTL: " + ttl);
 		
 		//TODO: if less than 1 min, this will still retrieve from source - change to seconds
-		long minsSinceLastRun = ChronoUnit.MINUTES.between(firstRun, lastRun);
-		LOG.info("Mins since last run: " + minsSinceLastRun);
+		long secsSinceLastRun = ChronoUnit.SECONDS.between(firstRun, lastRun);
+		LOG.info("Secs since last run: " + secsSinceLastRun);
+		boolean cacheExpired = false;
+		if( secsSinceLastRun > ttl * 60 ) {
+			cacheExpired = true;
+			
+			//reset firstRun, otherwise keeps increasing indefinitely
+			firstRun = null;
+		}
 		
-		if( minsSinceLastRun > ttl || firstLambdaExecution) {
+		if( cacheExpired || firstLambdaExecution) {
 			LOG.info("Cache expired, retrieving from source");
-			
-			//TODO: if > 5 mins, need to reset firstTime, otherwise keeps increasing 
-			
+						
 			responseBody.setRetrievedFromSource(true);
 			result = parser.parseRss(rssUrl);
 			this.addToCache(rssUrl, result);
