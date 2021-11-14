@@ -41,6 +41,13 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		String rssUrl = null;
 		String parseFromDescription = null;
 		
+		boolean firstLambdaExecution = false;
+		if(firstRun == null) {
+			firstRun = LocalDateTime.now();
+			firstLambdaExecution = true;
+		}
+		responseBody.setFirstRun(firstRun.toString());
+		
 		Map<String, String> params = (Map<String, String>)input.get("queryStringParameters");
 		
 		if(params != null) {
@@ -52,9 +59,8 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 			if(rssUrl != null && !rssUrl.trim().equals("")) {
 				try {
 					
-					Rss rss = this.retrieveContentFromCache(parser, rssUrl, responseBody);
-					//TODO: firstRun is null after 5 mins reset
-					responseBody.setFirstRun(firstRun.toString());
+					Rss rss = this.retrieveContentFromCache(firstLambdaExecution, firstRun, parser, rssUrl, responseBody);
+					lastRun = LocalDateTime.now();
 					responseBody.setLastRun(lastRun.toString());
 					
 					if(parseFromDescription == null || parseFromDescription.trim().equals("")) {
@@ -131,18 +137,11 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	Rss retrieveContentFromCache(RssParser parser, String rssUrl, Response responseBody)
+	Rss retrieveContentFromCache(boolean firstLambdaExecution, LocalDateTime firstRunTime, RssParser parser, String rssUrl, Response responseBody)
 			throws URISyntaxException, JsonParseException, JsonMappingException, IOException {
 		Rss result = null;
 		
-		boolean firstLambdaExecution = false;
-		if(firstRun == null) {
-			firstRun = LocalDateTime.now();
-			firstLambdaExecution = true;
-		}
-		
-		lastRun = LocalDateTime.now();
-		
+		LocalDateTime now = LocalDateTime.now();
 		int ttl = 0;
 		String ttlValue = System.getenv().get("ttl");
 		if(ttlValue != null && !ttlValue.equals("")) {
@@ -151,7 +150,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		LOG.info("TTL: " + ttl);
 		
 		//TODO: if less than 1 min, this will still retrieve from source - change to seconds
-		long secsSinceLastRun = ChronoUnit.SECONDS.between(firstRun, lastRun);
+		long secsSinceLastRun = ChronoUnit.SECONDS.between(firstRunTime, now);
 		LOG.info("Secs since last run: " + secsSinceLastRun);
 		boolean cacheExpired = false;
 		if( secsSinceLastRun > ttl * 60 ) {
