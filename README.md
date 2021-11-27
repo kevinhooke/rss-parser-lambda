@@ -3,7 +3,7 @@ AWS Lambda wrapper for rss-parser
 
 This is an AWS Lambda for rss-parseer, which is here: https://github.com/kevinhooke/rss-parser
 
-When called with a utl to an RSS feed, this Lambda together with rss-parser extracts titles of
+When called with a url to an RSS feed, this Lambda together with rss-parser extracts titles of
 news articles and returns in a simpel json response that can be displayed by a text client.
 
 The original use for this RSS parser is an Amateur Radio ax.25 node for Packet Radio, that allows
