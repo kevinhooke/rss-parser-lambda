@@ -21,7 +21,21 @@ import com.serverless.Response;
 import kh.rssparser.RssParser;
 import kh.rssparser.model.Item;
 import kh.rssparser.model.Rss;
-
+/**
+ * 
+ * 
+ * 
+ * 
+ * Serverless cli invoke tests:
+ * 
+ * serverless invoke --function rss-parser-lambda --data '{ "queryStringParameters": {"rss":"http://www.arrl.org/arrl.rss"}}'
+ * 
+ * serverless invoke --function rss-parser-lambda --data '{ "queryStringParameters": {"rss":"http://www.arrl.org/arrl.rss" }, "pathParameters" : { "item" : "1" } }'
+ * 
+ * 
+ * @author kevinhooke
+ *
+ */
 public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayResponse> {
 
 	private static final Logger LOG = LogManager.getLogger(Handler.class);
@@ -31,8 +45,8 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 	private static Map<String, Rss> cache = new HashMap<>();
 	
 	@Override
-	public ApiGatewayResponse handleRequest(Map<String, Object> input, Context context) {
-		LOG.info("received: {}", input);
+	public ApiGatewayResponse handleRequest(Map<String, Object> event, Context context) {
+		LOG.info("received: {}", event);
 		
 		ApiGatewayResponse response = null;
 		
@@ -40,6 +54,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		Response responseBody = new Response();
 		String rssUrl = null;
 		String parseFromDescription = null;
+		Integer itemIndex = null;
 		
 		boolean firstLambdaExecution = false;
 		if(firstRun == null) {
@@ -48,7 +63,8 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 		}
 		responseBody.setFirstRun(firstRun.toString());
 		
-		Map<String, String> params = (Map<String, String>)input.get("queryStringParameters");
+		Map<String, String> params = (Map<String, String>)event.get("queryStringParameters");
+		Map<String, String> pathParams = (Map<String, String>)event.get("pathParameters");
 		
 		if(params != null) {
 			rssUrl = (String)params.get("rss");
@@ -59,6 +75,14 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 			if(rssUrl != null && !rssUrl.trim().equals("")) {
 				try {
 					
+					if(pathParams != null) {
+						String itemValue = pathParams.get("item");
+						if(itemValue != null) {
+							itemIndex = Integer.parseInt(itemValue);
+						}
+						LOG.info("item: " + itemIndex.toString());
+					}
+					
 					Rss rss = this.retrieveContentFromCache(firstLambdaExecution, firstRun, parser, rssUrl, responseBody);
 					lastRun = LocalDateTime.now();
 					responseBody.setLastRun(lastRun.toString());
@@ -66,10 +90,22 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 					if(parseFromDescription == null || parseFromDescription.trim().equals("")) {
 					
 						List<Item> items = rss.getChannel().getItem();
-						for(Item itemText : items) {
-							responseBody.getHeadlines().add(this.removeNonStandardChars(itemText.getTitle()));;
+						if(itemIndex != null) {
+							//return text body of headline
+							LOG.info("requested item: " + itemIndex.toString() + ", items in list: " + items.size());
+							String unparsedDesc = items.get(itemIndex).getDescription();
+							String parsedDesc = this.removeNonStandardChars(items.get(itemIndex).getDescription());
+							LOG.info("item: " + items.get(itemIndex));
+							LOG.info("text unparsed: " + unparsedDesc);
+							LOG.info("text parsed: " + parsedDesc);
+							responseBody.setText(parsedDesc);
 						}
-						
+						else {
+							//return list of headlines
+							for(Item itemText : items) {
+								responseBody.getHeadlines().add(this.removeNonStandardChars(itemText.getTitle()));;
+							}
+						}
 						response = ApiGatewayResponse.builder()
 								.setStatusCode(200)
 								.setObjectBody(responseBody)
@@ -77,6 +113,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 					}
 					else {
 						//parse titles from description element
+						//TODO: npe here on second retreive
 						List<Item> items = rss.getChannel().getItem();
 						
 						//TODO: change this to use a page size param

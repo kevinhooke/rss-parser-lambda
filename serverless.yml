@@ -65,6 +65,9 @@ functions:
       - http:
           path: /parse
           method: get
+      - http:
+          path: /parse/{item}/desc
+          method: get          
 #      - websocket: $connect
 #      - s3: ${env:BUCKET}
 #      - schedule: rate(10 minutes)

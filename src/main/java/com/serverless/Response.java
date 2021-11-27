@@ -10,6 +10,7 @@ public class Response {
 	private String lastRun;
 	private boolean retrievedFromSource;
 	
+	private String text;
 	private List<String> headlines = new ArrayList<>();
 
 	public Response() {
@@ -53,5 +54,13 @@ public class Response {
 
 	public void setRetrievedFromSource(boolean retrievedFromSource) {
 		this.retrievedFromSource = retrievedFromSource;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
 	}
 }
