@@ -44,13 +44,14 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 
 	private static Map<String, Rss> cache = new HashMap<>();
 	
+	private RssParser parser = new RssParser();
+	
 	@Override
 	public ApiGatewayResponse handleRequest(Map<String, Object> event, Context context) {
 		LOG.info("received: {}", event);
 		
 		ApiGatewayResponse response = null;
 		
-		RssParser parser = new RssParser();
 		Response responseBody = new Response();
 		String rssUrl = null;
 		String parseFromDescription = null;
@@ -88,7 +89,7 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 					responseBody.setLastRun(lastRun.toString());
 					
 					if(parseFromDescription == null || parseFromDescription.trim().equals("")) {
-					
+						//TODO: bug here, npe on subsequent retreive for different url
 						List<Item> items = rss.getChannel().getItem();
 						if(itemIndex != null) {
 							//return text body of headline
@@ -237,4 +238,41 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 
 		return result;
 		}
+
+	void setParser(RssParser parser) {
+		this.parser = parser;
 	}
+
+	/**
+	 * For junit support
+	 * @return
+	 */
+	static LocalDateTime getFirstRun() {
+		return firstRun;
+	}
+
+	/**
+	 * For junit support
+	 * @return
+	 */
+	static void setFirstRun(LocalDateTime firstRun) {
+		Handler.firstRun = firstRun;
+	}
+
+	/**
+	 * For junit support
+	 * @return
+	 */
+	static LocalDateTime getLastRun() {
+		return lastRun;
+	}
+
+	/**
+	 * For junit support
+	 * @return
+	 */
+	static void setLastRun(LocalDateTime lastRun) {
+		Handler.lastRun = lastRun;
+	}
+	
+}
