@@ -78,7 +78,23 @@ public class HandlerTest {
 
 	@Test
 	public void testHandlerRequest_firstCallFromDesc() throws Exception{
-		//TODO
+		Handler handler = new Handler();
+		//init cache tracking vars to initial state
+		Handler.setFirstRun(null);
+		Handler.setLastRun(null);
+		
+		//set mock Parser
+		handler.setParser(this.mockRssParser("http://test1", "test"));
+		Map<String, Object> event =  new HashMap<>();
+		Map<String, String> queryStringParameters = new HashMap<>();
+		queryStringParameters.put("rss", "http://test1");
+		queryStringParameters.put("description", "true");
+		event.put("queryStringParameters", queryStringParameters);
+		Context mockContext = mock(Context.class);
+		ApiGatewayResponse response = handler.handleRequest(event, mockContext);
+		
+		assertNotNull(response);
+		assertTrue(response.getBody().contains("\"retrievedFromSource\":true"));
 	}
 	
 	@Test
@@ -111,7 +127,30 @@ public class HandlerTest {
 
 	@Test
 	public void testHandlerRequest_responseFromCacheOnSubsequentCallFromDesc() throws Exception{
-		//TODO
+		Handler handler = new Handler();
+		//init cache tracking vars to initial state
+		Handler.setFirstRun(null);
+		Handler.setLastRun(null);
+		
+		//set mock Parser
+		handler.setParser(this.mockRssParser("http://test1", "test"));
+		Map<String, Object> event =  new HashMap<>();
+		Map<String, String> queryStringParameters = new HashMap<>();
+		queryStringParameters.put("rss", "http://test1");
+		queryStringParameters.put("description", "true");
+		event.put("queryStringParameters", queryStringParameters);
+		Context mockContext = mock(Context.class);
+		ApiGatewayResponse response = handler.handleRequest(event, mockContext);
+		
+		assertNotNull(response);
+		assertTrue(response.getBody().contains("\"retrievedFromSource\":true"));
+
+		response = handler.handleRequest(event, mockContext);
+		
+		assertNotNull(response);
+		
+		//expected result is false on subsequent calls
+		assertTrue(response.getBody().contains("\"retrievedFromSource\":false"));
 	}
 	
 	@Test
@@ -147,7 +186,34 @@ public class HandlerTest {
 	
 	@Test
 	public void testHandlerRequest_responseFromCacheOnSubsequentCall_differentUrlFromDesc() throws Exception{
-		//TODO
+		Handler handler = new Handler();
+		//init cache tracking vars to initial state
+		Handler.setFirstRun(null);
+		Handler.setLastRun(null);
+		
+		//set mock Parser
+		handler.setParser(this.mockRssParser("http://test1", "test"));
+		Map<String, Object> event =  new HashMap<>();
+		Map<String, String> queryStringParameters = new HashMap<>();
+		queryStringParameters.put("rss", "http://test1");
+		queryStringParameters.put("description", "true");
+		event.put("queryStringParameters", queryStringParameters);
+		Context mockContext = mock(Context.class);
+		ApiGatewayResponse response = handler.handleRequest(event, mockContext);
+		
+		assertNotNull(response);
+		assertTrue(response.getBody().contains("\"retrievedFromSource\":true"));
+
+		//set params and mock for different rss url
+		queryStringParameters.put("rss", "http://test2");
+		queryStringParameters.put("description", "true");
+		event.put("queryStringParameters", queryStringParameters);
+		handler.setParser(this.mockRssParser("http://test2", "test2"));
+		response = handler.handleRequest(event, mockContext);
+		
+		assertNotNull(response);
+		//expected result is true on subsequent calls if url  is different
+		assertTrue(response.getBody().contains("\"retrievedFromSource\":true"));
 	}
 	
 }

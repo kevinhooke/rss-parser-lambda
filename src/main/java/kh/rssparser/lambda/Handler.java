@@ -198,8 +198,22 @@ public class Handler implements RequestHandler<Map<String, Object>, ApiGatewayRe
 			firstRun = null;
 		}
 		
-		if( cacheExpired || firstLambdaExecution) {
-			LOG.info("Cache expired, retrieving from source");
+		//check if source exists in cache yet
+		boolean notYetCached = false;
+		if(getFromCache(rssUrl) == null) {
+			notYetCached = true;
+		}
+		
+		if( notYetCached || cacheExpired || firstLambdaExecution) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Source not in cache[");
+			sb.append(notYetCached);
+			sb.append("], Cache expired[");
+			sb.append(cacheExpired);
+			sb.append("], first execution[");
+			sb.append(firstLambdaExecution);
+			sb.append("] : retrieving from source");
+			LOG.info(sb.toString());
 						
 			responseBody.setRetrievedFromSource(true);
 			result = parser.parseRss(rssUrl);
